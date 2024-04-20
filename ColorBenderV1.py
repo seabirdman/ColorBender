@@ -95,8 +95,11 @@ def quantize_image(image, n_colors):
     # Convert the image back to 8-bit representation
     new_image = np.clip(new_image, 0, 255).astype('uint8')
 
-    return new_image
+    # Calculate the unique colors after quantization
+    unique_colors = len(np.unique(new_pixels, axis=0))
+    print(f"Total unique colors now: {unique_colors}")
 
+    return new_image
 
 
 
@@ -117,6 +120,9 @@ def pick_and_roll(image, offset, total_colors_requested):
     
     total_colors_requested = max(1, int(total_colors_requested))
     unique_colors = len(set(map(tuple, pixels)))
+
+    # Print initial color count
+    print(f"Initial unique colors: {unique_colors}")
 
     num_new_colors = total_colors_requested - unique_colors
 
@@ -146,7 +152,7 @@ def pick_and_roll(image, offset, total_colors_requested):
                 total_tries += 1  # Increment the total number of tries
 
                 # Generate a new color from the neighbors of the old color
-                new_color = old_color + np.random.choice([-1, 0, 1], size=3)
+                new_color = old_color + np.random.choice([-2, -1, 0, 1, 2], size=3)                
                 new_color = np.clip(new_color, 0, 255)  # Make sure the color values are within the valid range
 
                 # Update color_counts
@@ -154,7 +160,6 @@ def pick_and_roll(image, offset, total_colors_requested):
                     color_counts[tuple(new_color)] = 0
                 color_counts[tuple(new_color)] += 1
                 color_counts[tuple(old_color)] -= 1
-
 
                 # Ensure the comparison returns a scalar
                 if np.linalg.norm(new_color - old_color) > 100:  # Check if the new color is too similar to the old color
@@ -166,9 +171,14 @@ def pick_and_roll(image, offset, total_colors_requested):
                 color_set.add(tuple(new_color))  # Update the set of colors
                 break
 
+
     # Reshape pixels to the original image shape
     new_image_np = pixels.reshape(height, width, 3).astype(np.uint8)
     new_image = Image.fromarray(new_image_np)
+
+    # Print the number of new colors added and the total colors
+    print(f"New colors added: {num_pixels_recolored}")
+    print(f"Total unique colors now: {len(color_set)}")
 
     # Print the average number of tries
     if num_new_colors > 0:
@@ -176,10 +186,6 @@ def pick_and_roll(image, offset, total_colors_requested):
 
     # Return the new image directly
     return new_image, num_pixels_recolored
-
-
-
-
 
 
 
@@ -293,7 +299,7 @@ def update_output(contents, filename, slider_value, offset):
     print(f"Unique colors: {unique_colors}")
 
     # Set the maximum value for the color slider
-    max_colors = max(3, unique_colors * 3)
+    max_colors = max(3, unique_colors * 5)
     print(f"Max colors: {max_colors}")
 
     # If the upload-image component triggered the callback, reset the slider value to the number of unique colors
@@ -396,14 +402,12 @@ def update_output(contents, filename, slider_value, offset):
 
 
 def create_3d_bubble_plot(image_np):
-    # Make sure we're using the correct variable here
+    # Ensure the image data is in the correct format (numpy array)
     if isinstance(image_np, Image.Image):
-        image_np = np.array(image_np)
-        print(f"Converted PIL Image to np.ndarray, shape: {image_np.shape}")
-    elif isinstance(image_np, np.ndarray):
-        print(f"Shape of input image data: {image_np.shape}")
-    else:
-        raise ValueError("Unsupported image format")
+        image_np = np.array(image_np)  # Convert PIL Image to np.ndarray if necessary
+
+    elif not isinstance(image_np, np.ndarray):
+        raise ValueError("Unsupported image format. Expected np.ndarray or PIL Image.")
 
     # Ensure the image is in RGB format
     if image_np.shape[-1] != 3:
@@ -542,8 +546,6 @@ def update_bubble_plots(contents, slider_value, image_container):
     modified_figure = create_3d_bubble_plot(processed_image_np)
 
     return original_figure, modified_figure
-
-
 
 
 
