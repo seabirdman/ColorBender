@@ -21,6 +21,7 @@ import cv2
 
 
 
+
 def color_distance(color1, color2):
     return np.sqrt(np.sum((np.array(color1) - np.array(color2)) ** 2))
 
